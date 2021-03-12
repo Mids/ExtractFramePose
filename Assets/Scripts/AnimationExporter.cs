@@ -17,11 +17,14 @@ public class AnimationExporter : MonoBehaviour
 
     public AnimatorOverrideController tOverrideController;
 
+    public int timeScale = 1;
     public float fps = 60f;
     private static float dt;
     private float currentTime = 0f;
 
     private StreamWriter sw;
+
+    public AnimationImporter Importer;
 
     private readonly HumanBodyBones[] _ees =
         {HumanBodyBones.LeftFoot, HumanBodyBones.RightFoot, HumanBodyBones.LeftHand, HumanBodyBones.RightHand};
@@ -34,10 +37,9 @@ public class AnimationExporter : MonoBehaviour
 
     private void Start()
     {
-        Application.targetFrameRate = 120;
+        Time.timeScale = timeScale;
+        Application.targetFrameRate = 30 * timeScale;
         dt = 1f / fps;
-
-        LoadFolder();
     }
 
     public void LoadFolder()
@@ -80,24 +82,17 @@ public class AnimationExporter : MonoBehaviour
             }
         }
 
-
         StartCoroutine(CaptureTransform());
     }
 
     private IEnumerator CaptureTransform()
     {
         var t = animator.transform;
-        // animator.speed = 0f;
+        animator.speed = 0f;
 
 
         foreach (var anim in animList)
         {
-            if (anim.name.StartsWith("H"))
-            {
-                print(anim.name);
-                continue;
-                
-            }
             var motionData = new MotionData(2 + (int) (anim.length / dt));
 
             t.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
@@ -112,9 +107,9 @@ public class AnimationExporter : MonoBehaviour
             {
                 animator.Play("CurrentMotion", 0, currentTime / anim.length);
 
-                yield return new WaitForEndOfFrame();
+                yield return null;
 
-                var skeletonData = GetSkeletonData(t);
+                var skeletonData = GetSkeletonData();
                 motionData.Data.Add(skeletonData);
 
                 currentTime += dt;
@@ -122,12 +117,11 @@ public class AnimationExporter : MonoBehaviour
 
             CalculateVelocity(motionData);
 
-            sw.Write(motionData.ToString());
+            // sw.Write(motionData.ToString());
 
             currentTime = 0f;
             sw.Close();
         }
-
     }
 
     private void CalculateVelocity(MotionData motionData)
@@ -157,20 +151,28 @@ public class AnimationExporter : MonoBehaviour
         }
     }
 
-    private SkeletonData GetSkeletonData(Transform t)
+    private SkeletonData GetSkeletonData()
     {
-        var data = new SkeletonData {Root = new JointData {Position = t.localPosition, Rotation = t.localRotation}};
+        var data = new SkeletonData();
+        var t = animator.GetBoneTransform(HumanBodyBones.Hips);
+
+        var rootPos = t.position;
+        var rootRot = t.rotation;
+        var rootInv = Quaternion.Inverse(rootRot);
+
+        data[HumanBodyBones.Hips] = new JointData {Position = rootPos, Rotation = rootRot};
 
         foreach (var ee in _ees)
         {
             var eet = animator.GetBoneTransform(ee);
-            var rootInv = Quaternion.Inverse(t.rotation);
 
-            var relativePos = rootInv * (eet.position - t.position);
+            var relativePos = rootInv * (eet.position - rootPos);
             var relativeRot = rootInv * eet.rotation;
 
             data[ee] = new JointData {Position = relativePos, Rotation = relativeRot};
         }
+
+        Importer.LoadSkeletonPose(data.ToString());
 
         return data;
     }

@@ -6,7 +6,7 @@ public class JointData
     public Quaternion Rotation;
     public Vector3 Velocity;
     public Vector3 AngularVelocity;
-
+        
     public void SetPositionAndRotation(Vector3 position, Quaternion rotation)
     {
         Position = position;
