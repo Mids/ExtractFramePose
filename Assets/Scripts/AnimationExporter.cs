@@ -88,7 +88,7 @@ public class AnimationExporter : MonoBehaviour
     private IEnumerator CaptureTransform()
     {
         var t = animator.transform;
-        animator.speed = 0f;
+        // animator.speed = 0f;
 
 
         foreach (var anim in animList)
@@ -101,7 +101,7 @@ public class AnimationExporter : MonoBehaviour
 
             print(anim.name);
             sw = new StreamWriter($"output/{anim.name}.txt", false, Encoding.UTF8);
-            sw.WriteLine("#" + anim.name);
+            // sw.WriteLine("#" + anim.name);
 
             while (currentTime < anim.length)
             {
@@ -117,7 +117,7 @@ public class AnimationExporter : MonoBehaviour
 
             CalculateVelocity(motionData);
 
-            // sw.Write(motionData.ToString());
+            sw.Write(motionData.ToString());
 
             currentTime = 0f;
             sw.Close();
@@ -171,8 +171,6 @@ public class AnimationExporter : MonoBehaviour
 
             data[ee] = new JointData {Position = relativePos, Rotation = relativeRot};
         }
-
-        Importer.LoadSkeletonPose(data.ToString());
 
         return data;
     }
