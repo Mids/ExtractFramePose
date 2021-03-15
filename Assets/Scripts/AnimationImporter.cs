@@ -1,33 +1,43 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 public class AnimationImporter : MonoBehaviour
 {
-    public Animator animator;
     public AnimationPlayer ap;
 
     private StreamReader sr;
 
-    public void Start()
+    private List<SkeletonData> _skeletonData = new List<SkeletonData>(100);
+
+    private int frame = 0;
+
+    
+    private void Start()
     {
-        
+        Import($"output/Handshake_001.txt");
+    }
+    public void Update()
+    {
+        if(_skeletonData.Count > frame)
+            ap.sd = _skeletonData[frame++];
     }
 
-    private void Import(string path)
+    private MotionData Import(string path)
     {
         sr = new StreamReader(path);
 
-        while (true)
+        while (true) 
         {
             var line = sr.ReadLine();
             if (line == default)
                 break;
-            if (line.StartsWith("#"))
-                continue;
-            LoadSkeletonPose(sr.ReadLine());
-            break;
+
+            LoadSkeletonPose(line);
         }
 
+        return new MotionData(_skeletonData);
     }
 
 
@@ -35,6 +45,6 @@ public class AnimationImporter : MonoBehaviour
     {
         var data = new SkeletonData(line);
 
-        ap.sd = data;
+        _skeletonData.Add(data);
     }
 }

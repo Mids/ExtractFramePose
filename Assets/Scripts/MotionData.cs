@@ -5,6 +5,11 @@ public class MotionData
 {
     public List<SkeletonData> Data;
 
+    public MotionData(List<SkeletonData> data)
+    {
+        Data = data;
+    }
+
     public MotionData(int totalFrame)
     {
         Data = new List<SkeletonData>(totalFrame);

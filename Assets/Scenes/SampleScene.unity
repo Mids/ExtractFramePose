@@ -379,7 +379,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &926944190
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -743,7 +743,7 @@ MonoBehaviour:
   - {fileID: -7403346733922334741, guid: d3ae63fa373f1964f940c8c23e7592b7, type: 3}
   - {fileID: -4938518970783263290, guid: bbb9d934dad40ec4596771d7c5728b8e, type: 3}
   tOverrideController: {fileID: 0}
-  timeScale: 4
+  timeScale: 1
   fps: 30
   Importer: {fileID: 926944190}
 --- !u!1 &1698321530 stripped

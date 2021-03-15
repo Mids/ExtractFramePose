@@ -8,17 +8,29 @@ public class AnimationPlayer : MonoBehaviour
 
     public GameObject EE;
 
-    public Dictionary<HumanBodyBones, Transform> EEDict = new Dictionary<HumanBodyBones, Transform>();
-
     private void Start()
     {
         _animator = GetComponent<Animator>();
+
+        GetTPose();
 
         // EEDict[HumanBodyBones.Hips] = Instantiate(EE).transform;
         // EEDict[HumanBodyBones.LeftFoot] = Instantiate(EE).transform;
         // EEDict[HumanBodyBones.RightFoot] = Instantiate(EE).transform;
         // EEDict[HumanBodyBones.LeftHand] = Instantiate(EE).transform;
         // EEDict[HumanBodyBones.RightHand] = Instantiate(EE).transform;
+    }
+    private readonly Dictionary<HumanBodyBones, Quaternion> _TPoseDict = new Dictionary<HumanBodyBones, Quaternion>();
+
+    private readonly Dictionary<HumanBodyBones, AvatarIKGoal> _eeDict = new Dictionary<HumanBodyBones, AvatarIKGoal>
+    {
+        {HumanBodyBones.LeftFoot, AvatarIKGoal.LeftFoot}, {HumanBodyBones.RightFoot, AvatarIKGoal.RightFoot},
+        {HumanBodyBones.LeftHand, AvatarIKGoal.LeftHand}, {HumanBodyBones.RightHand, AvatarIKGoal.RightHand}
+    };
+
+    private void GetTPose()
+    {
+        foreach (var ee in _eeDict.Keys) _TPoseDict[ee] = _animator.GetBoneTransform(ee).rotation;
     }
 
     private void OnAnimatorIK(int layerIndex)

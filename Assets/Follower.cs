@@ -17,7 +17,6 @@ public class Follower : MonoBehaviour
         {HumanBodyBones.LeftHand, AvatarIKGoal.LeftHand}, {HumanBodyBones.RightHand, AvatarIKGoal.RightHand}
     };
 
-    // Start is called before the first frame update
     private void Start()
     {
         _animator = GetComponent<Animator>();
