@@ -52,6 +52,8 @@ public class AnimationExporter : MonoBehaviour
 
         folderPath = AssetDatabase.GetAssetPath(folder);
         GetAllFilesInDirectory(folderPath);
+
+        StartCoroutine(CaptureTransform());
     }
 
     private void GetAllFilesInDirectory(string dirPath)
@@ -81,8 +83,6 @@ public class AnimationExporter : MonoBehaviour
                     animList.Add(animClip);
             }
         }
-
-        StartCoroutine(CaptureTransform());
     }
 
     private IEnumerator CaptureTransform()
@@ -146,8 +146,8 @@ public class AnimationExporter : MonoBehaviour
 
             var beforeLastPose = motionData.Data[middleSize - 1];
             var lastPose = motionData.Data[middleSize];
-            firstPose[ee].Velocity = GetVelocity(beforeLastPose[ee].Position, lastPose[ee].Position, dt);
-            firstPose[ee].AngularVelocity = GetAngularVelocity(beforeLastPose[ee].Rotation, lastPose[ee].Rotation, dt);
+            lastPose[ee].Velocity = GetVelocity(beforeLastPose[ee].Position, lastPose[ee].Position, dt);
+            lastPose[ee].AngularVelocity = GetAngularVelocity(beforeLastPose[ee].Rotation, lastPose[ee].Rotation, dt);
         }
     }
 
