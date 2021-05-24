@@ -13,6 +13,7 @@ public class AnimationImporter : MonoBehaviour
 
     private int frame = 0;
 
+    private string _jointNameLine;
     
     private void Start()
     {
@@ -27,6 +28,8 @@ public class AnimationImporter : MonoBehaviour
     private MotionData Import(string path)
     {
         sr = new StreamReader(path);
+
+        _jointNameLine = sr.ReadLine();
 
         while (true) 
         {
@@ -43,7 +46,9 @@ public class AnimationImporter : MonoBehaviour
 
     public void LoadSkeletonPose(string line)
     {
-        var data = new SkeletonData(line);
+        var data = new SkeletonData();
+        data.InitDict(_jointNameLine);
+        data.InitData(line);
 
         _skeletonData.Add(data);
     }

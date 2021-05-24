@@ -37,8 +37,8 @@ public class AnimationPlayer : MonoBehaviour
     {
         if (sd != default)
         {
-            var rootPos = sd[HumanBodyBones.Hips].Position;
-            var rootRot = sd[HumanBodyBones.Hips].Rotation;
+            var rootPos = sd.Root.Position;
+            var rootRot = sd.Root.Rotation;
             transform.localPosition = rootPos;
             transform.localRotation = rootRot;
 
@@ -52,23 +52,23 @@ public class AnimationPlayer : MonoBehaviour
             _animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 1);
 
 
-            _animator.SetIKPosition(AvatarIKGoal.LeftFoot, rootPos + rootRot * sd[HumanBodyBones.LeftFoot].Position);
-            
-            // _animator.SetIKRotation(AvatarIKGoal.LeftFoot, rootRot * sd[HumanBodyBones.LeftFoot].Rotation);
-            _animator.SetIKRotation(AvatarIKGoal.LeftFoot, _animator.GetBoneTransform(HumanBodyBones.LeftFoot).rotation);
-            // _animator.SetIKRotation(AvatarIKGoal.LeftFoot, Quaternion.identity);
-
-            _animator.SetIKPosition(AvatarIKGoal.RightFoot, rootPos + rootRot * sd[HumanBodyBones.RightFoot].Position);
-            _animator.SetIKRotation(AvatarIKGoal.RightFoot, rootRot * sd[HumanBodyBones.RightFoot].Rotation);
-            // _animator.SetIKRotation(AvatarIKGoal.RightFoot, Quaternion.identity);
-
-            _animator.SetIKPosition(AvatarIKGoal.LeftHand, rootPos + rootRot * sd[HumanBodyBones.LeftHand].Position);
-            _animator.SetIKRotation(AvatarIKGoal.LeftHand, rootRot * sd[HumanBodyBones.LeftHand].Rotation);
-            // _animator.SetIKRotation(AvatarIKGoal.LeftHand, Quaternion.identity);
-
-            _animator.SetIKPosition(AvatarIKGoal.RightHand, rootPos + rootRot * sd[HumanBodyBones.RightHand].Position);
-            _animator.SetIKRotation(AvatarIKGoal.RightHand, rootRot * sd[HumanBodyBones.RightHand].Rotation);
-            // _animator.SetIKRotation(AvatarIKGoal.RightHand,Quaternion.identity);
+            // _animator.SetIKPosition(AvatarIKGoal.LeftFoot, rootPos + rootRot * sd[HumanBodyBones.LeftFoot].Position);
+            //
+            // // _animator.SetIKRotation(AvatarIKGoal.LeftFoot, rootRot * sd[HumanBodyBones.LeftFoot].Rotation);
+            // _animator.SetIKRotation(AvatarIKGoal.LeftFoot, _animator.GetBoneTransform(HumanBodyBones.LeftFoot).rotation);
+            // // _animator.SetIKRotation(AvatarIKGoal.LeftFoot, Quaternion.identity);
+            //
+            // _animator.SetIKPosition(AvatarIKGoal.RightFoot, rootPos + rootRot * sd[HumanBodyBones.RightFoot].Position);
+            // _animator.SetIKRotation(AvatarIKGoal.RightFoot, rootRot * sd[HumanBodyBones.RightFoot].Rotation);
+            // // _animator.SetIKRotation(AvatarIKGoal.RightFoot, Quaternion.identity);
+            //
+            // _animator.SetIKPosition(AvatarIKGoal.LeftHand, rootPos + rootRot * sd[HumanBodyBones.LeftHand].Position);
+            // _animator.SetIKRotation(AvatarIKGoal.LeftHand, rootRot * sd[HumanBodyBones.LeftHand].Rotation);
+            // // _animator.SetIKRotation(AvatarIKGoal.LeftHand, Quaternion.identity);
+            //
+            // _animator.SetIKPosition(AvatarIKGoal.RightHand, rootPos + rootRot * sd[HumanBodyBones.RightHand].Position);
+            // _animator.SetIKRotation(AvatarIKGoal.RightHand, rootRot * sd[HumanBodyBones.RightHand].Rotation);
+            // // _animator.SetIKRotation(AvatarIKGoal.RightHand,Quaternion.identity);
 
 
             // EEDict[HumanBodyBones.Hips].position = rootPos;
