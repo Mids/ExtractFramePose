@@ -1,22 +1,39 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
 
-public class MotionData
+#endif // UNITY_EDITOR
+
+public class MotionData : ScriptableObject
 {
-    public List<SkeletonData> Data;
+    public string characterName;
+    public string motionName;
+    public int totalFrame;
+    public float fps = 60;
+    public List<SkeletonData> data;
 
-    public MotionData(List<SkeletonData> data)
+    public void Init(List<SkeletonData> dataList)
     {
-        Data = data;
+        totalFrame = dataList.Count;
+        data = dataList;
     }
 
-    public MotionData(int totalFrame)
+    public void Init(int frameCount)
     {
-        Data = new List<SkeletonData>(totalFrame);
+        totalFrame = frameCount;
+        data = new List<SkeletonData>(frameCount);
     }
 
-    public override string ToString()
+    public void Save()
     {
-        return Data.Aggregate("", (current, datum) => current + $"{datum}\n");
+#if UNITY_EDITOR
+        var path = $"Assets/output/{motionName}.motion.asset";
+        Debug.Log($"Saving to {path}");
+        if (!AssetDatabase.IsValidFolder("Assets/output"))
+            AssetDatabase.CreateFolder("Assets", "output");
+        AssetDatabase.CreateAsset(this, path);
+        AssetDatabase.SaveAssets();
+#endif // UNITY_EDITOR
     }
 }

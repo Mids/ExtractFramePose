@@ -72,5 +72,5 @@ crashlytics-build.properties
 
 .idea
 Assets/AnimTest/NNModels*
-output
+output*
 Assets/Resources/MannequinAnimation*

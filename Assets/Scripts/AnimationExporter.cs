@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class AnimationExporter : MonoBehaviour
 {
@@ -22,22 +22,17 @@ public class AnimationExporter : MonoBehaviour
     private static float dt;
     private float currentTime = 0f;
 
-    private StreamWriter sw;
-
-    private string JointNameLine =
-        "mixamorig1:LeftUpLeg	mixamorig1:LeftLeg	mixamorig1:LeftFoot	mixamorig1:LeftToeBase	mixamorig1:LeftToe_End	mixamorig1:RightUpLeg	mixamorig1:RightLeg	mixamorig1:RightFoot	mixamorig1:Spine	mixamorig1:Spine1	mixamorig1:Spine2	mixamorig1:LeftShoulder	mixamorig1:LeftArm	mixamorig1:LeftForeArm	mixamorig1:LeftHand	mixamorig1:Neck	mixamorig1:Head	mixamorig1:HeadTop_End	mixamorig1:RightShoulder	mixamorig1:RightArm	mixamorig1:RightForeArm	mixamorig1:RightHand";
-
-    public List<string> JointNames;
-    public Dictionary<string, Transform> TransformDict;
+    public List<ArticulationBody> JointABs;
+    public List<Transform> JointTransforms;
 
     private void Start()
     {
         Time.timeScale = timeScale;
         Application.targetFrameRate = 30 * timeScale;
         dt = 1f / fps;
-        JointNames = JointNameLine.Split('\t').ToList();
-        TransformDict = animator.GetComponentsInChildren<Transform>()
-            .Where(p=>JointNames.Contains(p.name)).ToDictionary(p=>p.name);
+        JointABs = animator.GetComponentsInChildren<ArticulationBody>().ToList();
+        Assert.IsTrue(JointABs[0].isRoot);
+        JointTransforms = JointABs.Select(p => p.transform).ToList();
     }
 
     public void LoadFolder()
@@ -91,17 +86,19 @@ public class AnimationExporter : MonoBehaviour
 
         foreach (var anim in animList)
         {
-            var motionData = new MotionData(2 + (int) (anim.length / dt));
+            print(anim.name);
 
             t.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-
             tOverrideController["Handshake_001"] = anim;
 
-            print(anim.name);
-            sw = new StreamWriter($"output/{anim.name}.txt", false, Encoding.UTF8);
-            // sw.WriteLine("#" + anim.name);
+            // Set Info
+            var motionData = ScriptableObject.CreateInstance<MotionData>();
+            motionData.Init(2 + (int) (anim.length / dt));
+            motionData.characterName = t.parent.name;
+            motionData.motionName = anim.name;
+            motionData.fps = fps;
 
-            sw.WriteLine(JointNameLine);
+            int frame = 0;
 
             while (currentTime < anim.length)
             {
@@ -109,91 +106,97 @@ public class AnimationExporter : MonoBehaviour
 
                 yield return null;
 
-                var skeletonData = GetSkeletonData();
-                motionData.Data.Add(skeletonData);
+                var skeletonData = GetSkeletonData(frame++);
+                motionData.data.Add(skeletonData);
 
                 currentTime += dt;
             }
 
             CalculateVelocity(motionData);
 
-            sw.Write(motionData.ToString());
+            motionData.Save();
 
             currentTime = 0f;
-            sw.Close();
         }
     }
 
     private void CalculateVelocity(MotionData motionData)
     {
-        var firstPose = motionData.Data[0];
-        var secondPose = motionData.Data[1];
-        firstPose.Root.Velocity = GetVelocity(firstPose.Root.Position, secondPose.Root.Position, dt);
-        firstPose.Root.AngularVelocity = GetAngularVelocity(firstPose.Root.Rotation, secondPose.Root.Rotation, dt);
+        #region Root
 
-        var middleSize = motionData.Data.Count - 1;
+        var firstPoseJoints = motionData.data[0].joints;
+        var secondPose = motionData.data[1].joints;
+        firstPoseJoints[0].velocity = GetVelocity(firstPoseJoints[0].position, secondPose[0].position, dt);
+        firstPoseJoints[0].angularVelocity =
+            GetAngularVelocity(firstPoseJoints[0].rotation, secondPose[0].rotation, dt);
+
+        var middleSize = motionData.data.Count - 1;
         for (var i = 1; i < middleSize; ++i)
         {
-            var prevPose = motionData.Data[i - 1];
-            var curPose = motionData.Data[i];
-            var nextPose = motionData.Data[i + 1];
+            var prevPose = motionData.data[i - 1].joints;
+            var curPose = motionData.data[i].joints;
+            var nextPose = motionData.data[i + 1].joints;
 
-            curPose.Root.Velocity = GetVelocity(prevPose.Root.Position, nextPose.Root.Position, 2 * dt);
-            curPose.Root.AngularVelocity = GetAngularVelocity(prevPose.Root.Rotation, nextPose.Root.Rotation, 2 * dt);
+            curPose[0].velocity = GetVelocity(prevPose[0].position, nextPose[0].position, 2 * dt);
+            curPose[0].angularVelocity =
+                GetAngularVelocity(prevPose[0].rotation, nextPose[0].rotation, 2 * dt);
         }
 
-        var beforeLastPose = motionData.Data[middleSize - 1];
-        var lastPose = motionData.Data[middleSize];
-        lastPose.Root.Velocity = GetVelocity(beforeLastPose.Root.Position, lastPose.Root.Position, dt);
-        lastPose.Root.AngularVelocity = GetAngularVelocity(beforeLastPose.Root.Rotation, lastPose.Root.Rotation, dt);
-        
-        
-        foreach (var joint in motionData.Data[0].Joints)
-        {
-            firstPose = motionData.Data[0];
-            secondPose = motionData.Data[1];
-            firstPose.JointDict[joint].Velocity = GetVelocity(firstPose.JointDict[joint].Position, secondPose.JointDict[joint].Position, dt);
-            firstPose.JointDict[joint].AngularVelocity = GetAngularVelocity(firstPose.JointDict[joint].Rotation, secondPose.JointDict[joint].Rotation, dt);
+        var beforeLastPose = motionData.data[middleSize - 1].joints;
+        var lastPose = motionData.data[middleSize].joints;
+        lastPose[0].velocity = GetVelocity(beforeLastPose[0].position, lastPose[0].position, dt);
+        lastPose[0].angularVelocity =
+            GetAngularVelocity(beforeLastPose[0].rotation, lastPose[0].rotation, dt);
 
-            middleSize = motionData.Data.Count - 1;
+        #endregion Root
+
+        for (var index = 1; index < firstPoseJoints.Length; index++)
+        {
+            firstPoseJoints[index].velocity = GetVelocity(firstPoseJoints[index].position,
+                secondPose[index].position, dt);
+            firstPoseJoints[index].angularVelocity = GetAngularVelocity(firstPoseJoints[index].rotation,
+                secondPose[index].rotation, dt);
+
+            middleSize = motionData.data.Count - 1;
             for (var i = 1; i < middleSize; ++i)
             {
-                var prevPose = motionData.Data[i - 1];
-                var curPose = motionData.Data[i];
-                var nextPose = motionData.Data[i + 1];
+                var prevPose = motionData.data[i - 1].joints;
+                var curPose = motionData.data[i].joints;
+                var nextPose = motionData.data[i + 1].joints;
 
-                curPose.JointDict[joint].Velocity = GetVelocity(prevPose.JointDict[joint].Position, nextPose.JointDict[joint].Position, 2 * dt);
-                curPose.JointDict[joint].AngularVelocity = GetAngularVelocity(prevPose.JointDict[joint].Rotation, nextPose.JointDict[joint].Rotation, 2 * dt);
+                curPose[index].velocity = GetVelocity(prevPose[index].position,
+                    nextPose[index].position, 2 * dt);
+                curPose[index].angularVelocity = GetAngularVelocity(prevPose[index].rotation,
+                    nextPose[index].rotation, 2 * dt);
             }
 
-            beforeLastPose = motionData.Data[middleSize - 1];
-            lastPose = motionData.Data[middleSize];
-            lastPose.JointDict[joint].Velocity = GetVelocity(beforeLastPose.JointDict[joint].Position, lastPose.JointDict[joint].Position, dt);
-            lastPose.JointDict[joint].AngularVelocity = GetAngularVelocity(beforeLastPose.JointDict[joint].Rotation, lastPose.JointDict[joint].Rotation, dt);
+            lastPose[index].velocity = GetVelocity(beforeLastPose[index].position,
+                lastPose[index].position, dt);
+            lastPose[index].angularVelocity = GetAngularVelocity(beforeLastPose[index].rotation,
+                lastPose[index].rotation, dt);
         }
     }
 
-    private SkeletonData GetSkeletonData()
+    private SkeletonData GetSkeletonData(int frameNumber)
     {
-        var data = new SkeletonData();
-        data.InitDict(JointNameLine);
-        var t = animator.GetBoneTransform(HumanBodyBones.Hips);
+        var data = new SkeletonData(JointTransforms.Count) {frameNumber = frameNumber};
 
-        var rootPos = t.position;
-        var rootRot = t.rotation;
+        var root = JointTransforms[0];
+        var rootPos = root.position;
+        var rootRot = root.rotation;
         var rootInv = Quaternion.Inverse(rootRot);
 
-        data.Root = new JointData {Position = rootPos, Rotation = rootRot};
+        data.joints[0] = new JointData {position = rootPos, rotation = rootRot, jointIdx = 0, jointName = root.name};
 
-        foreach (var ee in data.Joints)
+        for (var index = 1; index < data.joints.Length; index++)
         {
-            if(!TransformDict.ContainsKey(ee)) print(ee);
-            var eet = TransformDict[ee];
+            var jointTransform = JointTransforms[index];
 
-            var relativePos = rootInv * (eet.position - rootPos);
-            var relativeRot = rootInv * eet.rotation;
+            var relativePos = rootInv * (jointTransform.position - rootPos);
+            var relativeRot = rootInv * jointTransform.rotation;
 
-            data.JointDict[ee] = new JointData {Position = relativePos, Rotation = relativeRot};
+            data.joints[index] = new JointData
+                {position = relativePos, rotation = relativeRot, jointIdx = index, jointName = jointTransform.name};
         }
 
         return data;
