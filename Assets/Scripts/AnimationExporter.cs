@@ -33,6 +33,8 @@ public class AnimationExporter : MonoBehaviour
         JointABs = animator.GetComponentsInChildren<ArticulationBody>().ToList();
         Assert.IsTrue(JointABs[0].isRoot);
         JointTransforms = JointABs.Select(p => p.transform).ToList();
+
+        JointABs[0].Sleep();
     }
 
     public void LoadFolder()
@@ -104,7 +106,7 @@ public class AnimationExporter : MonoBehaviour
             {
                 animator.Play("CurrentMotion", 0, currentTime / anim.length);
 
-                yield return null;
+                yield return new WaitForEndOfFrame();
 
                 var skeletonData = GetSkeletonData(frame++);
                 motionData.data.Add(skeletonData);
@@ -188,6 +190,12 @@ public class AnimationExporter : MonoBehaviour
 
         data.joints[0] = new JointData {position = rootPos, rotation = rootRot, jointIdx = 0, jointName = root.name};
 
+        // TODO: Fix center of mass calculation
+        data.centerOfMass = (JointTransforms[0].position - rootPos) * JointABs[0].mass;
+        var totalMass = JointABs[0].mass;
+        Debug.DrawLine(rootPos, Vector3.zero, Color.red, 0.1f);
+
+
         for (var index = 1; index < data.joints.Length; index++)
         {
             var jointTransform = JointTransforms[index];
@@ -197,8 +205,13 @@ public class AnimationExporter : MonoBehaviour
 
             data.joints[index] = new JointData
                 {position = relativePos, rotation = relativeRot, jointIdx = index, jointName = jointTransform.name};
+            data.centerOfMass += (JointTransforms[index].position - rootPos) * JointABs[index].mass;
+            totalMass += JointABs[index].mass;
         }
 
+        data.centerOfMass /= totalMass;
+
+        Debug.DrawLine(rootPos, rootPos + data.centerOfMass, Color.blue, 0.1f);
         return data;
     }
 
