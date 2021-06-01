@@ -33,8 +33,6 @@ public class AnimationRecorder : MonoBehaviour
         JointABs = animator.GetComponentsInChildren<ArticulationBody>().ToList();
         Assert.IsTrue(JointABs[0].isRoot);
         JointTransforms = JointABs.Select(p => p.transform).ToList();
-
-        JointABs[0].Sleep();
     }
 
     public void LoadFolder()
@@ -193,7 +191,7 @@ public class AnimationRecorder : MonoBehaviour
         // TODO: Fix center of mass calculation
         data.centerOfMass = (JointTransforms[0].position - rootPos) * JointABs[0].mass;
         var totalMass = JointABs[0].mass;
-        Debug.DrawLine(rootPos, Vector3.zero, Color.red, 0.1f);
+        Debug.DrawLine(Vector3.zero, root.position, Color.red, 0.1f);
 
 
         for (var index = 1; index < data.joints.Length; index++)
@@ -211,7 +209,6 @@ public class AnimationRecorder : MonoBehaviour
 
         data.centerOfMass /= totalMass;
 
-        Debug.DrawLine(rootPos, rootPos + data.centerOfMass, Color.blue, 0.1f);
         return data;
     }
 

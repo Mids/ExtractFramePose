@@ -39,7 +39,6 @@ public class AnimationPlayer : MonoBehaviour
             
             for (var index = 1; index < JointTransforms.Count; index++)
             {
-                JointABs[index].anchorPosition = 
                 JointTransforms[index].position = rootPos + rootRot * skeleton.joints[index].position;
                 JointTransforms[index].rotation = rootRot * skeleton.joints[index].rotation;
             }
