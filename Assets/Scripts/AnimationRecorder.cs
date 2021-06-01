@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-public class AnimationExporter : MonoBehaviour
+public class AnimationRecorder : MonoBehaviour
 {
     public DefaultAsset folder;
     private string folderPath;

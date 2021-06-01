@@ -1,14 +1,14 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(AnimationExporter))]
-public class AnimationExporterEditor : Editor
+[CustomEditor(typeof(AnimationRecorder))]
+public class AnimationRecorderEditor : Editor
 {
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
 
         if (GUILayout.Button("Export")) 
-            (target as AnimationExporter)?.LoadFolder();
+            (target as AnimationRecorder)?.LoadFolder();
     }
 }
