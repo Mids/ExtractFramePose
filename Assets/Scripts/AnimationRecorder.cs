@@ -129,12 +129,18 @@ public class AnimationRecorder : MonoBehaviour
         var rootRot = root.rotation;
         var rootInv = Quaternion.Inverse(rootRot);
 
-        data.joints[0] = new JointData {position = rootPos, rotation = rootRot, jointIdx = 0, jointName = root.name};
+        data.joints[0] = new JointData
+        {
+            position = rootPos,
+            rotation = rootRot,
+            jointIdx = 0,
+            jointName = root.name,
+            inverseRotation = rootInv
+        };
 
         // TODO: Fix center of mass calculation
         data.centerOfMass = (JointTransforms[0].position - rootPos) * JointABs[0].mass;
         var totalMass = JointABs[0].mass;
-        Debug.DrawLine(Vector3.zero, root.position, Color.red, 0.1f);
 
 
         for (var index = 1; index < data.joints.Length; index++)
@@ -143,9 +149,11 @@ public class AnimationRecorder : MonoBehaviour
 
             var relativePos = rootInv * (jointTransform.position - rootPos);
             var relativeRot = rootInv * jointTransform.rotation;
+            var inverseRot = Quaternion.Inverse(relativeRot);
 
             data.joints[index] = new JointData
                 {position = relativePos, rotation = relativeRot, jointIdx = index, jointName = jointTransform.name};
+            data.joints[index].inverseRotation = inverseRot;
             data.centerOfMass += (JointTransforms[index].position - rootPos) * JointABs[index].mass;
             totalMass += JointABs[index].mass;
         }
@@ -158,63 +166,28 @@ public class AnimationRecorder : MonoBehaviour
     private void PostProcess(MotionData motionData)
     {
         CalculateVelocity(motionData);
-        
     }
 
     private void CalculateVelocity(MotionData motionData)
     {
-        #region Root
+        var lastFrame = motionData.data.Count - 1;
+        var jointCount = motionData.data[0].joints.Length;
 
-        var firstPoseJoints = motionData.data[0].joints;
-        var secondPose = motionData.data[1].joints;
-        firstPoseJoints[0].velocity = GetVelocity(firstPoseJoints[0].position, secondPose[0].position, dt);
-        firstPoseJoints[0].angularVelocity =
-            GetAngularVelocity(firstPoseJoints[0].rotation, secondPose[0].rotation, dt);
-
-        var middleSize = motionData.data.Count - 1;
-        for (var i = 1; i < middleSize; ++i)
+        for (var i = 0; i < motionData.data.Count; ++i)
         {
-            var prevPose = motionData.data[i - 1].joints;
-            var curPose = motionData.data[i].joints;
-            var nextPose = motionData.data[i + 1].joints;
+            var prevFrame = Mathf.Max(0, i - 1);
+            var nextFrame = Mathf.Min(i + 1, lastFrame);
+            var t = dt * (nextFrame - prevFrame);
 
-            curPose[0].velocity = GetVelocity(prevPose[0].position, nextPose[0].position, 2 * dt);
-            curPose[0].angularVelocity =
-                GetAngularVelocity(prevPose[0].rotation, nextPose[0].rotation, 2 * dt);
-        }
-
-        var beforeLastPose = motionData.data[middleSize - 1].joints;
-        var lastPose = motionData.data[middleSize].joints;
-        lastPose[0].velocity = GetVelocity(beforeLastPose[0].position, lastPose[0].position, dt);
-        lastPose[0].angularVelocity =
-            GetAngularVelocity(beforeLastPose[0].rotation, lastPose[0].rotation, dt);
-
-        #endregion Root
-
-        for (var index = 1; index < firstPoseJoints.Length; index++)
-        {
-            firstPoseJoints[index].velocity = GetVelocity(firstPoseJoints[index].position,
-                secondPose[index].position, dt);
-            firstPoseJoints[index].angularVelocity = GetAngularVelocity(firstPoseJoints[index].rotation,
-                secondPose[index].rotation, dt);
-
-            middleSize = motionData.data.Count - 1;
-            for (var i = 1; i < middleSize; ++i)
+            for (var joint = 0; joint < jointCount; ++joint)
             {
-                var prevPose = motionData.data[i - 1].joints;
-                var curPose = motionData.data[i].joints;
-                var nextPose = motionData.data[i + 1].joints;
+                var cur = motionData.data[i].joints;
+                var prev = motionData.data[prevFrame].joints;
+                var next = motionData.data[nextFrame].joints;
 
-                curPose[index].velocity = GetVelocity(prevPose[index].position,
-                    nextPose[index].position, 2 * dt);
-                curPose[index].angularVelocity = GetAngularVelocity(prevPose[index].rotation,
-                    nextPose[index].rotation, 2 * dt);
+                cur[joint].velocity = GetVelocity(prev[joint].position, next[joint].position, t);
+                cur[joint].angularVelocity = GetAngularVelocity(prev[joint].rotation, next[joint].rotation, t);
             }
-
-            lastPose[index].velocity = GetVelocity(beforeLastPose[index].position,
-                lastPose[index].position, dt);
-            lastPose[index].angularVelocity = GetAngularVelocity(beforeLastPose[index].rotation,
-                lastPose[index].rotation, dt);
         }
     }
 

@@ -10,6 +10,7 @@ public struct JointData
     public string jointName;
     public Vector3 position;
     public Quaternion rotation;
+    public Quaternion inverseRotation;
     public Vector3 velocity;
     public Vector3 angularVelocity;
 
@@ -21,6 +22,7 @@ public struct JointData
         childrenIdx = new int[] { };
         position = default;
         rotation = default;
+        inverseRotation = default;
         velocity = default;
         angularVelocity = default;
     }
