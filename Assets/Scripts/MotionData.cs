@@ -15,7 +15,6 @@ public class MotionData : ScriptableObject
 
     public void Init(int frameCount)
     {
-        totalFrame = frameCount;
         data = new List<SkeletonData>(frameCount);
     }
 

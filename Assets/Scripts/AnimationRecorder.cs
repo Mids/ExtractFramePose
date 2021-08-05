@@ -112,6 +112,8 @@ public class AnimationRecorder : MonoBehaviour
                 currentTime += dt;
             }
 
+            motionData.totalFrame = motionData.data.Count;
+
             PostProcess(motionData);
 
             motionData.Save();

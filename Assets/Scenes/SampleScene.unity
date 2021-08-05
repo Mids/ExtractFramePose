@@ -1124,7 +1124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 620ac5252e988fb4080f39c037d36569, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  motion: {fileID: 11400000, guid: b83b8000e5b891043bbee9cda601b6fd, type: 2}
+  motion: {fileID: 11400000, guid: 842e22a58e016c7408721ecc98576cf2, type: 2}
   JointABs:
   - {fileID: 1268406487}
   - {fileID: 1033776293}
@@ -1604,6 +1604,10 @@ PrefabInstance:
       propertyPath: Dummy
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 797975754, guid: c9e0d2a9e22290841a4147648c7d0559, type: 3}
+      propertyPath: folder
+      value: 
+      objectReference: {fileID: 102900000, guid: 24720f63406790a4aa8a56f11173787d, type: 3}
     - target: {fileID: 56757017134548413, guid: c9e0d2a9e22290841a4147648c7d0559, type: 3}
       propertyPath: m_Enabled
       value: 1
