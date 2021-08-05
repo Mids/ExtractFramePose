@@ -112,12 +112,53 @@ public class AnimationRecorder : MonoBehaviour
                 currentTime += dt;
             }
 
-            CalculateVelocity(motionData);
+            PostProcess(motionData);
 
             motionData.Save();
 
             currentTime = 0f;
         }
+    }
+
+    private SkeletonData GetSkeletonData(int frameNumber)
+    {
+        var data = new SkeletonData(JointTransforms.Count) {frameNumber = frameNumber};
+
+        var root = JointTransforms[0];
+        var rootPos = root.position;
+        var rootRot = root.rotation;
+        var rootInv = Quaternion.Inverse(rootRot);
+
+        data.joints[0] = new JointData {position = rootPos, rotation = rootRot, jointIdx = 0, jointName = root.name};
+
+        // TODO: Fix center of mass calculation
+        data.centerOfMass = (JointTransforms[0].position - rootPos) * JointABs[0].mass;
+        var totalMass = JointABs[0].mass;
+        Debug.DrawLine(Vector3.zero, root.position, Color.red, 0.1f);
+
+
+        for (var index = 1; index < data.joints.Length; index++)
+        {
+            var jointTransform = JointTransforms[index];
+
+            var relativePos = rootInv * (jointTransform.position - rootPos);
+            var relativeRot = rootInv * jointTransform.rotation;
+
+            data.joints[index] = new JointData
+                {position = relativePos, rotation = relativeRot, jointIdx = index, jointName = jointTransform.name};
+            data.centerOfMass += (JointTransforms[index].position - rootPos) * JointABs[index].mass;
+            totalMass += JointABs[index].mass;
+        }
+
+        data.centerOfMass /= totalMass;
+
+        return data;
+    }
+
+    private void PostProcess(MotionData motionData)
+    {
+        CalculateVelocity(motionData);
+        
     }
 
     private void CalculateVelocity(MotionData motionData)
@@ -175,41 +216,6 @@ public class AnimationRecorder : MonoBehaviour
             lastPose[index].angularVelocity = GetAngularVelocity(beforeLastPose[index].rotation,
                 lastPose[index].rotation, dt);
         }
-    }
-
-    private SkeletonData GetSkeletonData(int frameNumber)
-    {
-        var data = new SkeletonData(JointTransforms.Count) {frameNumber = frameNumber};
-
-        var root = JointTransforms[0];
-        var rootPos = root.position;
-        var rootRot = root.rotation;
-        var rootInv = Quaternion.Inverse(rootRot);
-
-        data.joints[0] = new JointData {position = rootPos, rotation = rootRot, jointIdx = 0, jointName = root.name};
-
-        // TODO: Fix center of mass calculation
-        data.centerOfMass = (JointTransforms[0].position - rootPos) * JointABs[0].mass;
-        var totalMass = JointABs[0].mass;
-        Debug.DrawLine(Vector3.zero, root.position, Color.red, 0.1f);
-
-
-        for (var index = 1; index < data.joints.Length; index++)
-        {
-            var jointTransform = JointTransforms[index];
-
-            var relativePos = rootInv * (jointTransform.position - rootPos);
-            var relativeRot = rootInv * jointTransform.rotation;
-
-            data.joints[index] = new JointData
-                {position = relativePos, rotation = relativeRot, jointIdx = index, jointName = jointTransform.name};
-            data.centerOfMass += (JointTransforms[index].position - rootPos) * JointABs[index].mass;
-            totalMass += JointABs[index].mass;
-        }
-
-        data.centerOfMass /= totalMass;
-
-        return data;
     }
 
     private static Vector3 GetVelocity(Vector3 from, Vector3 to, float deltaTime)

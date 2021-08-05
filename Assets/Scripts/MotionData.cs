@@ -13,12 +13,6 @@ public class MotionData : ScriptableObject
     public float fps = 60;
     public List<SkeletonData> data;
 
-    public void Init(List<SkeletonData> dataList)
-    {
-        totalFrame = dataList.Count;
-        data = dataList;
-    }
-
     public void Init(int frameCount)
     {
         totalFrame = frameCount;
