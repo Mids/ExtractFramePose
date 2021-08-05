@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using DataProcessor;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,7 +9,7 @@ public class AnimationPlayerEditor : Editor
     {
         DrawDefaultInspector();
 
-        if (GUILayout.Button("Play")) 
+        if (GUILayout.Button("Play"))
             (target as AnimationPlayer)?.PlayCoroutine();
     }
 }

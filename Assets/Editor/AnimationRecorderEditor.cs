@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using DataProcessor;
+using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(AnimationRecorder))]
@@ -8,7 +9,7 @@ public class AnimationRecorderEditor : Editor
     {
         DrawDefaultInspector();
 
-        if (GUILayout.Button("Export")) 
+        if (GUILayout.Button("Export"))
             (target as AnimationRecorder)?.LoadFolder();
     }
 }
