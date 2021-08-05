@@ -124,6 +124,8 @@ public class AnimationRecorder : MonoBehaviour
     {
         var data = new SkeletonData(JointTransforms.Count) {frameNumber = frameNumber};
 
+        #region Root
+
         var root = JointTransforms[0];
         var rootPos = root.position;
         var rootRot = root.rotation;
@@ -138,10 +140,12 @@ public class AnimationRecorder : MonoBehaviour
             inverseRotation = rootInv
         };
 
-        // TODO: Fix center of mass calculation
         data.centerOfMass = (JointTransforms[0].position - rootPos) * JointABs[0].mass;
         var totalMass = JointABs[0].mass;
 
+        #endregion
+
+        #region Joints
 
         for (var index = 1; index < data.joints.Length; index++)
         {
@@ -152,11 +156,18 @@ public class AnimationRecorder : MonoBehaviour
             var inverseRot = Quaternion.Inverse(relativeRot);
 
             data.joints[index] = new JointData
-                {position = relativePos, rotation = relativeRot, jointIdx = index, jointName = jointTransform.name};
-            data.joints[index].inverseRotation = inverseRot;
+            {
+                position = relativePos,
+                rotation = relativeRot,
+                jointIdx = index,
+                jointName = jointTransform.name,
+                inverseRotation = inverseRot
+            };
             data.centerOfMass += (JointTransforms[index].position - rootPos) * JointABs[index].mass;
             totalMass += JointABs[index].mass;
         }
+
+        #endregion
 
         data.centerOfMass /= totalMass;
 
@@ -170,24 +181,23 @@ public class AnimationRecorder : MonoBehaviour
 
     private void CalculateVelocity(MotionData motionData)
     {
-        var lastFrame = motionData.data.Count - 1;
-        var jointCount = motionData.data[0].joints.Length;
-
         for (var i = 0; i < motionData.data.Count; ++i)
         {
             var prevFrame = Mathf.Max(0, i - 1);
-            var nextFrame = Mathf.Min(i + 1, lastFrame);
+            var nextFrame = Mathf.Min(i + 1, motionData.data.Count - 1);
             var t = dt * (nextFrame - prevFrame);
 
-            for (var joint = 0; joint < jointCount; ++joint)
-            {
-                var cur = motionData.data[i].joints;
-                var prev = motionData.data[prevFrame].joints;
-                var next = motionData.data[nextFrame].joints;
+            var cur = motionData.data[i];
+            var prev = motionData.data[prevFrame];
+            var next = motionData.data[nextFrame];
 
-                cur[joint].velocity = GetVelocity(prev[joint].position, next[joint].position, t);
-                cur[joint].angularVelocity = GetAngularVelocity(prev[joint].rotation, next[joint].rotation, t);
+            for (var j = 0; j < cur.joints.Length; ++j)
+            {
+                cur.joints[j].velocity = GetVelocity(prev.joints[j].position, next.joints[j].position, t);
+                cur.joints[j].angularVelocity = GetAngularVelocity(prev.joints[j].rotation, next.joints[j].rotation, t);
             }
+
+            cur.centerOfMassVelocity = GetVelocity(prev.centerOfMass, next.centerOfMass, t);
         }
     }
 
