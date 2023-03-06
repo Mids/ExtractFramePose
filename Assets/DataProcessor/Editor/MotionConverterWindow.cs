@@ -1,7 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace DataProcessor.Editor
 {
@@ -11,10 +15,16 @@ public class MotionConverterWindow : EditorWindow
 
     private static Transform _pelvis;
     private static Animator _animator;
+    private static DefaultAsset _folder;
     private static AnimationClip _clip;
 
-    private static float _fps = 60;
+    private static float _fps = 30;
+    private static string _outputDir = "OutputMotions";
 
+    private static bool _converting = false;
+    private static bool _done = false;
+
+    private static AnimationClip[] _clips;
     private Vector3[] _positions;
     private Quaternion[] _quaternions;
 
@@ -23,19 +33,110 @@ public class MotionConverterWindow : EditorWindow
 
     private void OnGUI()
     {
+        EditorUtility.ClearProgressBar();
+        if (_converting)
+        {
+            EditorGUI.BeginDisabledGroup(true);
+        }
+        else
+        {
+            EditorGUI.BeginDisabledGroup(false);
+        }
+
+        var originalLabelWidth = EditorGUIUtility.labelWidth;
+        originalLabelWidth = Mathf.Min(originalLabelWidth, EditorGUIUtility.currentViewWidth / 2);
+        EditorGUIUtility.labelWidth = originalLabelWidth;
         GUILayout.Label(Title, EditorStyles.boldLabel);
 
         _pelvis = (Transform)EditorGUILayout.ObjectField("Pelvis", _pelvis, typeof(Transform), true);
         _animator = (Animator)EditorGUILayout.ObjectField("Animator", _animator, typeof(Animator), true);
-        _clip = (AnimationClip)EditorGUILayout.ObjectField("Clip", _clip, typeof(AnimationClip), true);
+
+        GUILayout.Space(5);
+        GUILayout.Label("Choose folder or clip", EditorStyles.boldLabel);
+
+        GUILayout.BeginHorizontal();
+        if (!_clip && !_folder)
+        {
+            EditorGUIUtility.labelWidth = originalLabelWidth / 2;
+        }
+
+        if (!_clip)
+        {
+            _folder = (DefaultAsset)EditorGUILayout.ObjectField("Folder", _folder, typeof(DefaultAsset), false);
+        }
+
+        if (!_folder)
+        {
+            _clip = (AnimationClip)EditorGUILayout.ObjectField("Clip", _clip, typeof(AnimationClip), false);
+        }
+
+        Assert.IsFalse(_clip && _folder, "Choose one between Folder or Clip");
+
+        EditorGUIUtility.labelWidth = originalLabelWidth;
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(5);
+
         _fps = EditorGUILayout.FloatField("FPS", _fps);
+        _outputDir = EditorGUILayout.TextField("Output Directory", _outputDir);
 
         if (GUILayout.Button("Convert!"))
         {
+            _converting = true;
+
+            var clips = GetClips();
             BackUpTransform();
-            CaptureTransform();
+            var clipsCount = clips.Count;
+            for (var clipIndex = 0; clipIndex < clipsCount; clipIndex++)
+            {
+                var clip = clips[clipIndex];
+                EditorUtility.DisplayProgressBar("Converting Motions", $"{clipIndex} / {clipsCount}",
+                    (float)clipIndex / clipsCount);
+                CaptureTransform(clip);
+            }
+
             ResetTransform();
+
+            _converting = false;
+
+            _done = true;
         }
+
+        if (_done)
+        {
+            EditorGUILayout.LabelField("Finished.");
+        }
+    }
+
+    private IEnumerator Convert()
+    {
+        yield break;
+    }
+
+    private List<AnimationClip> GetClips()
+    {
+        if (_clip)
+        {
+            return new List<AnimationClip> { _clip };
+        }
+
+        var folderPath = AssetDatabase.GetAssetPath(_folder);
+        var folderInfo = new DirectoryInfo(folderPath);
+        var fileInfos = folderInfo.GetFiles("*.fbx", SearchOption.AllDirectories);
+        var allClips = new List<AnimationClip>();
+
+        foreach (var fileInfo in fileInfos)
+        {
+            var absolutePath = fileInfo.FullName.Replace(Path.DirectorySeparatorChar, '/');
+            Assert.IsTrue(absolutePath.StartsWith(Application.dataPath));
+            var relativePath = "Assets" + absolutePath.Substring(Application.dataPath.Length);
+            var clips = AssetDatabase.LoadAllAssetRepresentationsAtPath(relativePath)
+                .OfType<AnimationClip>();
+
+            allClips.AddRange(clips);
+        }
+
+        return allClips;
     }
 
     private void BackUpTransform()
@@ -62,27 +163,25 @@ public class MotionConverterWindow : EditorWindow
         }
     }
 
-    private void CaptureTransform()
+    private void CaptureTransform(AnimationClip clip)
     {
         var t = _animator.transform;
-
-        var anim = _clip;
 
         t.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
 
         // Set Info
         var motionData = CreateInstance<MotionData>();
-        motionData.Init(2 + (int)(anim.length * _fps));
-        motionData.characterName = t.parent.name;
-        motionData.motionName = anim.name;
+        motionData.Init(2 + (int)(clip.length * _fps));
+        motionData.characterName = t.name;
+        motionData.motionName = clip.name;
         motionData.fps = _fps;
 
         int frame = 0;
         float time = 0f;
 
-        while (time < anim.length)
+        while (time < clip.length)
         {
-            _clip.SampleAnimation(_animator.gameObject, time);
+            clip.SampleAnimation(_animator.gameObject, time);
 
             var PoseData = GetPoseData(frame++);
             motionData.data.Add(PoseData);
@@ -90,11 +189,11 @@ public class MotionConverterWindow : EditorWindow
             time += 1 / _fps;
         }
 
-        motionData.totalFrame = motionData.data.Count;
+        motionData.totalFrames = motionData.data.Count;
 
         PostProcess(motionData);
 
-        motionData.Save();
+        motionData.Save(_outputDir);
     }
 
     private PoseData GetPoseData(int frameNumber)

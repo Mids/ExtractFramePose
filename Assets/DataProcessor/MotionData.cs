@@ -10,7 +10,7 @@ public class MotionData : ScriptableObject
 {
     public string characterName;
     public string motionName;
-    public int totalFrame;
+    public int totalFrames;
     public float fps = 60;
     public List<PoseData> data;
 
@@ -18,7 +18,7 @@ public class MotionData : ScriptableObject
     {
         characterName = source.characterName;
         motionName = source.motionName;
-        totalFrame = source.totalFrame;
+        totalFrames = source.totalFrames;
         fps = source.fps;
         data = new List<PoseData>(source.data.Count);
         for (var i = 0; i < source.data.Count; i++)
@@ -30,14 +30,14 @@ public class MotionData : ScriptableObject
         data = new List<PoseData>(frameCount);
     }
 
-    public void Save()
+    public void Save(string outputDir)
     {
 #if UNITY_EDITOR
-        var path = $"Assets/output/{motionName}.motion.asset";
+        var path = $"Assets/{outputDir}/{motionName}.motion.asset";
         Debug.Log($"Saving to {path}");
-        if (!AssetDatabase.IsValidFolder("Assets/output"))
+        if (!AssetDatabase.IsValidFolder($"Assets/{outputDir}"))
         {
-            AssetDatabase.CreateFolder("Assets", "output");
+            AssetDatabase.CreateFolder("Assets", outputDir);
         }
 
         AssetDatabase.CreateAsset(this, path);

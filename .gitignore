@@ -71,7 +71,5 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 .idea
-Assets/AnimTest/NNModels*
-output*
-Assets/Resources/MannequinAnimation*
-Assets/Resources/nsm*
+Assets/SourceMotions*
+Assets/OutputMotions*
